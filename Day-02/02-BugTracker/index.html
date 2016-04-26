@@ -35,7 +35,7 @@
 	</style>
 	<script type="text/usecase">
 		/*
-		1. Add a new bug
+		1. Add a new bug - done
 		2. List the bugs
 		3. Toggle the bug status
 		4. Remove closed bugs
@@ -51,15 +51,31 @@
 		14. Reorganize the app
 		*/
 	</script>
+	<script src="angular.min.js"></script>
+	<script>
+		var bugTrackerApp = angular.module("bugTrackerApp", []);
+		bugTrackerApp.controller("bugsController", function($scope){
+			$scope.bugs = [
+				"Textbox is not enabled",
+				"Object reference not set to an object",
+				"User authentication failure",
+				"blah blha blah"
+			];
+			
+			$scope.addNew = function(bugName){
+				$scope.bugs.push(bugName);
+			};
+		});
+	</script>
 </head>
-<body>
+<body ng-app="bugTrackerApp">
 	<h1>Bug Tracker</h1>
 	<hr>
-	<div class="content">
+	<div class="content" data-ng-controller="bugsController">
 		<section class="stats">
 			<span class="closed">2</span>
 			<span>/</span>
-			<span>5</span>
+			<span>{{bugs.length}}</span>
 		</section>
 		<section class="search">
 			<label for="">Search :</label>
@@ -78,13 +94,12 @@
 		</section>
 		<section class="edit">
 			<label for="">Bug Name :</label>
-			<input type="text" name="" id="">
-			<input type="button" value="Add New">
+			<input type="text" ng-model="newBugName">
+			<input type="button" value="Add New" ng-click="addNew(newBugName)">
 		</section>
 		<section class="list">
 			<ol>
-				<li><span class="bugName">Object reference not found</span></li>
-				<li><span class="bugName closed">User authentication failure</span></li>
+				<li ng-repeat="bug in bugs track by $index"><span class="bugName">{{bug}}</span></li>
 			</ol>
 			<input type="button" value="Remove Closed">
 		</section>
