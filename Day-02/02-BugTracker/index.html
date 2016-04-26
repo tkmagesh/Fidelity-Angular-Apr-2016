@@ -42,7 +42,7 @@
 		5. Display statistics - done
 		6. Search for the bugs - done
 		7. Sort the bugs - done
-		8. Improvise the bug display
+		8. Improvise the bug display - done
 		9. Persist the bugs in the localStorage
 		10. Display 'createdAt'
 		11. Persist the bugs in the server
@@ -54,7 +54,29 @@
 	<script src="angular.min.js"></script>
 	<script>
 		var bugTrackerApp = angular.module("bugTrackerApp", []);
-		bugTrackerApp.controller("bugsController", function($scope){
+		
+		bugTrackerApp.value('appDefaults', {
+			bugName : '[Default bug]',
+			trimLength : 30,
+			trailText : '***'
+		});
+
+		bugTrackerApp.factory("bugOperations", function(appDefaults){
+			return {
+				toggle : function(bug){
+					bug.isClosed = !bug.isClosed;
+				},
+				create : function(bugName){
+					bugName = bugName || appDefaults.bugName;
+					return {
+						name : bugName,
+						isClosed : false
+					};
+				}
+			};
+		});
+
+		bugTrackerApp.controller("bugsController", function($scope, bugOperations){
 			$scope.bugs = [
 				{name : "Textbox is not enabled", isClosed : false},
 				{name : "Object reference not set to an object", isClosed : true},
@@ -63,15 +85,12 @@
 			];
 			
 			$scope.addNew = function(bugName){
-				var newBug = {
-					name : bugName,
-					isClosed : false
-				};
+				var newBug = bugOperations.create(bugName);
 				$scope.bugs.push(newBug);
 			};
 
 			$scope.toggle = function(bug){
-				bug.isClosed = !bug.isClosed;
+				bugOperations.toggle(bug);
 			};
 
 			$scope.removeClosed = function(){
@@ -80,20 +99,28 @@
 						$scope.bugs.splice(i,1);
 			};
 
-			$scope.getClosedCount = function(){
-				/*var closedCount = 0;
-				for(var i=0; i <$scope.bugs.length; i++)
-					if ($scope.bugs[i].isClosed)
-						++closedCount;
-				return closedCount;*/
+		});
 
-				/*return $scope.bugs.filter(function(bug){
-					return bug.isClosed;
-				}).length;*/
+		bugTrackerApp.filter('toClosedCount', function($filter){
+			var builtInFilter = $filter('filter');
+			/*return function(bugs){
+				bugs = bugs || [];
+				return builtInFilter(bugs, {isClosed : true}).length;
+			};*/
 
-				return $scope.bugs.reduce(function(result, bug){
+			return function(bugs){
+				bugs = bugs || [];
+				return bugs.reduce(function(result,bug){
 					return bug.isClosed ? ++result : result;
-				},0);
+				},0)
+			};
+		});
+
+		bugTrackerApp.filter('trimText', function(appDefaults){
+			return function(data, options){
+				var trimLength = options.trimLength || appDefaults.trimLength,
+					trailText = options.trailText || appDefaults.trailText;
+				return data.length < trimLength ? data : data.substr(0,trimLength) + trailText;
 			};
 		});
 	</script>
@@ -103,7 +130,7 @@
 	<hr>
 	<div class="content" data-ng-controller="bugsController">
 		<section class="stats">
-			<span class="closed">{{getClosedCount()}}</span>
+			<span class="closed">{{bugs | toClosedCount}}</span>
 			<span>/</span>
 			<span>{{bugs.length}}</span>
 		</section>
@@ -132,7 +159,7 @@
 			<ol>
 				<li ng-repeat="bug in (bugs | filter:searchBug | orderBy:sortBugBy:sortBugOrder)">
 					<span class="bugName" ng-click="toggle(bug)" ng-class="{closed : bug.isClosed}">
-						{{bug.name}}
+						{{ (bug.name | trimText:{trimLength : 30, trailText:'...'}) }}
 					</span>
 				</li>
 			</ol>
