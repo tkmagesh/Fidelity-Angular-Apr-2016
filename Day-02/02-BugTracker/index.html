@@ -31,7 +31,10 @@
 		cursor: pointer;
 		font-size: 14pt;
 	}
-
+	.datetime{
+		font-style: italic;
+		font-size: small;
+	}
 	</style>
 	<script type="text/usecase">
 		/*
@@ -44,6 +47,20 @@
 		7. Sort the bugs - done
 		8. Improvise the bug display - done
 		9. Persist the bugs in the localStorage
+			window.localStorage
+			===================
+				* key/value store
+				* key must be unique & value must be string 
+				* use angular.toJson() and angular.fromJson() for searialization and deserialization respectively
+				* APIs
+				------
+					- setItem(key, value)
+					- getItem(key) -> value
+					- removeItem(key)
+					- key(index) -> key at index
+					- clear()
+					- length -> no of items in the storage
+
 		10. Display 'createdAt'
 		11. Persist the bugs in the server
 		12. Add 'description'
@@ -161,6 +178,9 @@
 					<span class="bugName" ng-click="toggle(bug)" ng-class="{closed : bug.isClosed}">
 						{{ (bug.name | trimText:{trimLength : 30, trailText:'...'}) }}
 					</span>
+					<div class="datetime">
+						[@{createdAt}]
+					</div>
 				</li>
 			</ol>
 			<input type="button" value="Remove Closed" ng-click="removeClosed()">
