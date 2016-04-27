@@ -11,6 +11,12 @@
       "name": "Promises are not working",
       "isClosed": false,
       "createdAt": "2016-02-16T16:27:53.060Z"
+    },
+    {
+      "id": 3,
+      "name": "Server communication failure",
+      "isClosed": false,
+      "createdAt": "2016-04-27T07:37:30.935Z"
     }
   ]
 }
