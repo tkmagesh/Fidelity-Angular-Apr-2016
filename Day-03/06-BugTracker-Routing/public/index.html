@@ -69,34 +69,41 @@
 
 		10. Display 'createdAt' - done
 		11. Persist the bugs in the server - done
-		12. Add 'description'
-		13. Bug details should be accessible using a url
+		12. Add 'description' - done
+		13. Bug details should be accessible using a url - done
 		14. Reorganize the app
 		*/
 	</script>
 	<script src="angular.min.js"></script>
 	<script src="moment.js"></script>
+	<script src="angular-route.js"></script>
+	<script src="utils.js"></script>
 	<script>
 
-		var utils = angular.module("utils", []);
-		utils.filter('trimText', function(appDefaults){
-			return function(data, options){
-				var trimLength = options.trimLength || appDefaults.trimLength,
-					trailText = options.trailText || appDefaults.trailText;
-				return data.length < trimLength ? data : data.substr(0,trimLength) + trailText;
-			};
-		});
-		
-		utils.value('momentApi', window.moment);
 
-		utils.filter('elapsed', function(momentApi){
-			return function(value){
-				return momentApi(value).fromNow();
-			};
+		var bugTrackerApp = angular.module("bugTrackerApp", ["ngRoute", "utils"]);
+		
+		bugTrackerApp.config(function($routeProvider){
+			$routeProvider
+				.when("/list", {
+					//template : '<h3>Bugs List</h3>'
+					templateUrl : 'templates/bugs-list.html',
+					controller : 'bugsController'
+				})
+				.when("/new", {
+					//template : "<h3>New Bug</h3>"
+					templateUrl : 'templates/bugs-new.html',
+					controller : 'newBugController'
+				})
+				.when("/details/:id", {
+					templateUrl : 'templates/bug-details.html',
+					controller : 'bugDetailsController'
+				})
+				.otherwise({
+					redirectTo : "/list"
+				});
 		});
 
-		var bugTrackerApp = angular.module("bugTrackerApp", ["utils"]);
-		
 		bugTrackerApp.value('appDefaults', {
 			bugName : '[Default bug]',
 			trimLength : 30,
@@ -170,28 +177,43 @@
 						return response.data;
 					});	
 			}
+			function getBugById(id){
+				return $http
+					.get('http://localhost:3000/bugs/' + id)
+					.then(function(response){
+						return response.data;
+					});
+			}
 			return{
 				getAll : getAllBugs, 
+				getById : getBugById,
 				toggle : toggleBug,
 				add : addBug,
 				remove : removeBug
 			}
-		})
-		bugTrackerApp.controller("bugsController", function($scope, bugService, $http){
+		});
+
+		bugTrackerApp.controller("newBugController", function($scope, bugService, $location){
+			$scope.addNew = function(bugName){
+				bugService.add(bugName).then(function(newBug){
+					$location.path("/list");
+				});
+			};
+		});
+
+		bugTrackerApp.controller("bugDetailsController", function($scope, bugService, $routeParams){
+			var bugId = parseInt($routeParams.id);
+			bugService.getById(bugId).then(function(bug){
+				$scope.bug = bug;
+			});
+		});
+		bugTrackerApp.controller("bugsController", function($scope, bugService){
 			$scope.bugs = [];
 			
 			var promise = bugService.getAll();
 			promise.then(function(bugs){
 				$scope.bugs = bugs;
 			});
-			
-
-
-			$scope.addNew = function(bugName){
-				bugService.add(bugName).then(function(newBug){
-					$scope.bugs.push(newBug);
-				});
-			};
 
 			$scope.toggle = function(bug){
 				bugService.toggle(bug);
@@ -227,57 +249,6 @@
 <body ng-app="bugTrackerApp">
 	<h1>Bug Tracker - Server</h1>
 	<hr>
-	<div class="content" data-ng-controller="bugsController">
-		<section class="stats">
-			<span class="closed">{{bugs | toClosedCount}}</span>
-			<span>/</span>
-			<span>{{bugs.length}}</span>
-		</section>
-		<section class="search">
-			<label for="">Search :</label>
-			<input type="text" ng-model="searchBug.name">
-			<label for="">Closed ? :</label>
-			<input type="checkbox" ng-model="searchBug.isClosed">
-			<input type="button" value="Show All" ng-click="searchBug.isClosed = ''">
-		</section>
-		<section class="sort">
-			<label for="">Order By:</label>
-			<select ng-model="sortBugBy">
-				<option value="name">Name</option>
-				<option value="isClosed">Status</option>
-			</select>
-			<label for="">Descending ? :</label>
-			<input type="checkbox" ng-model="sortBugOrder">
-		</section>
-		<section class="edit">
-			<hr>
-			<h3>New Bug</h3>
-			<div class="field">
-				<label for="">Bug Name :</label>
-				<input type="text" ng-model="newBug.name">	
-			</div>
-			<div class="field">
-				<label for="">Description :</label>
-				<textarea name="" id="" cols="50" rows="10" ng-model="newBug.desc"></textarea>	
-			</div>
-			<div class="field">
-				<input type="button" value="Add New" ng-click="addNew(newBug)">	
-			</div>
-		</section>
-		<section class="list">
-			<hr>
-			<ol>
-				<li ng-repeat="bug in (bugs | filter:searchBug | orderBy:sortBugBy:sortBugOrder)">
-					<span class="bugName" ng-click="toggle(bug)" ng-class="{closed : bug.isClosed}">
-						{{ (bug.name | trimText:{trimLength : 30, trailText:'...'}) }}
-					</span>
-					<div class="datetime">
-						{{bug.createdAt | elapsed}}
-					</div>
-				</li>
-			</ol>
-			<input type="button" value="Remove Closed" ng-click="removeClosed()">
-		</section>
-	</div>
+	<ng-view></ng-view>
 </body>
 </html> 
